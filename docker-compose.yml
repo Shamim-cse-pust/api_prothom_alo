@@ -22,6 +22,6 @@ services:
       - app
     entrypoint: >
       /bin/sh -c "apk update && apk add --no-cache curl busybox && \
-      curl -X GET http://app:8000/scrape && \
-      echo '*/50 * * * * curl -X GET http://app:8000/scrape' > /etc/crontabs/root && \
+      curl -X GET http://app:8000/scrape-time && \
+      echo '*/50 * * * * curl -X GET http://app:8000/scrape-time' > /etc/crontabs/root && \
       crond -f -l 8"

@@ -7,9 +7,19 @@ from datetime import datetime
 import requests
 import httpx
 import redis
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 nest_asyncio.apply()
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allows all origins
+    allow_credentials=True,
+    allow_methods=["*"],  # Allows all HTTP methods
+    allow_headers=["*"],  # Allows all headers
+)
 
 # Initialize Redis client
 redis_client = redis.StrictRedis(host='redis', port=6379, decode_responses=True)
@@ -150,12 +160,13 @@ async def scrape():
 async def get_news_paper():
     try:
         cached_data = redis_client.get("scraped_data")
-        print(f"Cached data: ")
         if cached_data:
-            return {"data": (cached_data)}
+            return JSONResponse(content={"data": eval(cached_data)})
+        else:
+            return JSONResponse(content={"error": "No news data available at the moment. Please try again later."})
     except Exception as e:
         print(f"[News Paper Error] {e}")
-    return {"error": "Failed to fetch news paper."}
+        return JSONResponse(content={"error": "An error occurred while fetching news. Please wait and try again."})
 
 @app.get("/shamim")
 def shamim():
