@@ -33,7 +33,7 @@ async def get_published_time(article_url):
     return "Unknown"
 
 # Update fetch_prothomalo_h3s to use the async get_published_time
-async def fetch_prothomalo_h3s(link):
+async def fetch_prothomalo_h3s(link, flag):
     results = []
     try:
         async with async_playwright() as pw:
@@ -49,7 +49,10 @@ async def fetch_prothomalo_h3s(link):
                 href = await link_tag.get_attribute("href") if link_tag else None
                 full_href = href if href and href.startswith("http") else f"https://www.prothomalo.com{href}" if href else None
                 if text and full_href:
-                    time_ago = await get_published_time(full_href)
+                    if flag == 1:
+                        time_ago = await get_published_time(full_href)
+                    else:
+                        time_ago = "Unknown"
                     results.append({
                         "headline": text,
                         "link": full_href,
@@ -89,8 +92,8 @@ async def fetch_navbar_links():
 def read_root():
     return {"message": "Welcome to the Prothom Alo Scraper API"}
 
-@app.get("/scrape")
-async def scrape():
+@app.get("/scrape-time")
+async def scrape1():
     try:
 
         # If no cache, scrape the website
@@ -98,7 +101,7 @@ async def scrape():
         results = []
 
         for item in navbar_data:
-            headlines = await fetch_prothomalo_h3s(item['link'])
+            headlines = await fetch_prothomalo_h3s(item['link'], 1)
             results.append({
                 "category": item['name'],
                 "url": item['link'],
@@ -115,11 +118,39 @@ async def scrape():
         print(f"[Scrape Error] {e}")
         return {"error": "Something went wrong while scraping."}
 
+@app.get("/scrape")
+async def scrape():
+    try:
+        print("Scraping without time")
+
+        # If no cache, scrape the website
+        navbar_data = await fetch_navbar_links()
+        results = []
+
+        for item in navbar_data:
+            headlines = await fetch_prothomalo_h3s(item['link'], 0)
+            results.append({
+                "category": item['name'],
+                "url": item['link'],
+                "headlines": headlines
+            })
+        
+        redis_client.delete("scraped_data")
+
+        # Store the scraped data in Redis cache with a timeout of 1 hour
+        redis_client.setex("scraped_data", 3600, str(results))
+
+        return {"data": results}
+    except Exception as e:
+        print(f"[Scrape Error] {e}")
+        return {"error": "Something went wrong while scraping."}
+
+
 @app.get("/news-paper")
 async def get_news_paper():
     try:
         cached_data = redis_client.get("scraped_data")
-        redis_client.delete("scraped_data")
+        print(f"Cached data: ")
         if cached_data:
             return {"data": (cached_data)}
     except Exception as e:
@@ -130,9 +161,18 @@ async def get_news_paper():
 def shamim():
     try:
         # Set a test value in Redis with a 1-hour expiration
-        redis_client.setex("scraped_data", 3600, "shamim")
+        redis_client.setex("shamim", 3600, "shamim")
         print("Test value 'shamim' has been set in Redis.")
         return {"message": "Test value 'shamim' has been set in Redis."}
     except Exception as e:
         print(f"[Shamim Endpoint Error] {e}")
         return {"error": f"Failed to set test value in Redis: {e}"}
+@app.get("/delete-cache")
+def delete_cache():
+    try:
+        # Delete the cached data from Redis
+        redis_client.delete("scraped_data")
+        return {"message": "Cache deleted successfully."}
+    except Exception as e:
+        print(f"[Delete Cache Error] {e}")
+        return {"error": "Failed to delete cache."}

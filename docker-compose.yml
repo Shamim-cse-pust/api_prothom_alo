@@ -21,6 +21,7 @@ services:
     depends_on:
       - app
     entrypoint: >
-      /bin/sh -c "apk add --no-cache curl busybox-suid && \
-      echo '* * * * * curl -X GET http://app:8000/shamim' > /etc/crontabs/root && \
+      /bin/sh -c "apk update && apk add --no-cache curl busybox && \
+      curl -X GET http://app:8000/scrape && \
+      echo '*/50 * * * * curl -X GET http://app:8000/scrape' > /etc/crontabs/root && \
       crond -f -l 8"
