@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: api-prothom-alo
+    env: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: REDIS_HOST
+        value: redis
+      - key: REDIS_PORT
+        value: "6379"
+
+  - type: redis
+    name: api-prothom-alo-redis
+    plan: free
