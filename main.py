@@ -119,6 +119,7 @@ async def scrape():
 async def get_news_paper():
     try:
         cached_data = redis_client.get("scraped_data")
+        redis_client.delete("scraped_data")
         if cached_data:
             return {"data": (cached_data)}
     except Exception as e:
@@ -130,6 +131,7 @@ def shamim():
     try:
         # Set a test value in Redis with a 1-hour expiration
         redis_client.setex("scraped_data", 3600, "shamim")
+        print("Test value 'shamim' has been set in Redis.")
         return {"message": "Test value 'shamim' has been set in Redis."}
     except Exception as e:
         print(f"[Shamim Endpoint Error] {e}")
