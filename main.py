@@ -37,7 +37,7 @@ async def get_published_time(article_url):
             published_dt = datetime.fromisoformat(published_str.replace('Z', '+00:00'))
             now = datetime.now(published_dt.tzinfo)
             hours_ago = (now - published_dt).total_seconds() / 3600
-            return f"{hours_ago:.1f} hours ago"
+            return f"{hours_ago:.2f}"
     except Exception as e:
         print(f"[Time Parse Error] {e}")
     return "Unknown"
